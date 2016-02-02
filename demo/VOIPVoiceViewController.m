@@ -33,8 +33,8 @@
     // Dispose of any resources that can be recreated.
 }
 
-- (void)dial {
-    [self.voip dial];
+- (enum SessionMode)mode {
+    return SESSION_VOICE;
 }
 
 - (void)startStream {

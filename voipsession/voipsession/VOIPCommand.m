@@ -8,6 +8,9 @@
 
 #import "VOIPCommand.h"
 #import <imsdk/util.h>
+#define STATIC_ASSERT(COND,MSG) typedef char static_assertion_##MSG[(COND)?1:-1]
+
+STATIC_ASSERT(sizeof(CFUUIDBytes)==16,UUIDSizeIs16Byte);
 
 @implementation NatPortMap
 
@@ -22,14 +25,19 @@
         p += 4;
         if (self.cmd == VOIP_COMMAND_DIAL || self.cmd == VOIP_COMMAND_DIAL_VIDEO) {
             self.dialCount = readInt32(p);
+            p += 4;
+            CFUUIDBytes uuid;
+            memcpy(&uuid, p, 16);
+            self.sessionID = uuid;
+            p += 16;
         } else if (self.cmd == VOIP_COMMAND_ACCEPT) {
-            if (content.length >= 10) {
-                self.natMap = [[NatPortMap alloc] init];
-                self.natMap.ip = readInt32(p);
-                p += 4;
-                self.natMap.port = readInt16(p);
-                p += 2;
-            }
+            self.natMap = [[NatPortMap alloc] init];
+            self.natMap.ip = readInt32(p);
+            p += 4;
+            self.natMap.port = readInt16(p);
+            p += 2;
+            self.mode = readInt32(p);
+            p += 4;
         } else if (self.cmd == VOIP_COMMAND_CONNECTED) {
             if (content.length >= 10) {
                 self.natMap = [[NatPortMap alloc] init];
@@ -42,6 +50,9 @@
                 self.relayIP = readInt32(p);
                 p += 4;
             }
+        } else if (self.cmd == VOIP_COMMAND_REFUSE) {
+            self.refuseReason = readInt32(p);
+            p += 4;
         }
     }
     return self;
@@ -56,14 +67,19 @@
     if (self.cmd == VOIP_COMMAND_DIAL || self.cmd == VOIP_COMMAND_DIAL_VIDEO) {
         writeInt32(self.dialCount, p);
         p += 4;
-        return [NSData dataWithBytes:buf length:8];
+        CFUUIDBytes uuid = self.sessionID;
+        memcpy(p, &uuid, 16);
+        p += 16;
+        return [NSData dataWithBytes:buf length:24];
     } else if (self.cmd == VOIP_COMMAND_ACCEPT) {
         NSLog(@"nat map ip:%x", self.natMap.ip);
         writeInt32(self.natMap.ip, p);
         p += 4;
         writeInt16(self.natMap.port, p);
         p += 2;
-        return [NSData dataWithBytes:buf length:10];
+        writeInt32(self.mode, p);
+        p += 4;
+        return [NSData dataWithBytes:buf length:14];
     } else if (self.cmd == VOIP_COMMAND_CONNECTED) {
         NSLog(@"nat map ip:%x", self.natMap.ip);
         writeInt32(self.natMap.ip, p);
@@ -73,6 +89,10 @@
         writeInt32(self.relayIP, p);
         p += 4;
         return [NSData dataWithBytes:buf length:14];
+    } else if (self.cmd == VOIP_COMMAND_REFUSE) {
+        writeInt32(self.refuseReason, p);
+        p += 4;
+        return [NSData dataWithBytes:buf length:8];
     } else {
         return [NSData dataWithBytes:buf length:4];
     }

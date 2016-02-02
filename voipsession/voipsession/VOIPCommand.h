@@ -36,7 +36,13 @@ enum EVOIPCommand {
 
 @property(nonatomic, assign) int32_t cmd;
 @property(nonatomic, assign) int32_t dialCount;//只对VOIP_COMMAND_DIAL, VOIP_COMMAND_DIAL_VIDEO
+@property(nonatomic, assign) CFUUIDBytes sessionID;//只对VOIP_COMMAND_DIAL, VOIP_COMMAND_DIAL_VIDEO
+
+@property(nonatomic, assign) int32_t mode;//VOIP_COMMAND_ACCEPT
+
 @property(nonatomic) NatPortMap *natMap;//VOIP_COMMAND_ACCEPT，VOIP_COMMAND_CONNECTED
 @property(nonatomic) int32_t relayIP;//VOIP_COMMAND_CONNECTED, 中转服务器ip地址
+
+@property(nonatomic, assign) int32_t refuseReason; //VOIP_COMMAND_REFUSE
 
 @end

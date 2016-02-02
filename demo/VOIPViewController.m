@@ -174,9 +174,24 @@
         self.hangUpButton.hidden = YES;
     }
     
+    
+    if ([self isEmptyUUID:self.sessionID]) {
+        CFUUIDRef theUUID = CFUUIDCreate(NULL);
+        CFUUIDBytes uuid = CFUUIDGetUUIDBytes(theUUID);
+        NSLog(@"gen session id:%@", theUUID);
+        CFRelease(theUUID);
+        self.sessionID = uuid;
+    } else {
+        CFUUIDRef theUUID = CFUUIDCreateFromUUIDBytes(NULL, self.sessionID);
+        NSLog(@"session id:%@", theUUID);
+        CFRelease(theUUID);
+    }
+    
     self.voip = [[VOIPSession alloc] init];
     self.voip.currentUID = self.currentUID;
     self.voip.peerUID = self.peerUID;
+    self.voip.mode = self.mode;
+    self.voip.sessionID = self.sessionID;
     self.voip.delegate = self;
     [self.voip holePunch];
     [[VOIPService instance] pushVOIPObserver:self.voip];
@@ -202,6 +217,17 @@
     }];
 }
 
+- (BOOL)isEmptyUUID:(CFUUIDBytes)uuid {
+    return (uuid.byte0 == 0 && uuid.byte1 == 0 && uuid.byte2 == 0 && uuid.byte3 == 0 &&
+            uuid.byte4 == 0 && uuid.byte5 == 0 && uuid.byte6 == 0 && uuid.byte7 == 0 &&
+            uuid.byte8 == 0 && uuid.byte9 == 0 && uuid.byte10 == 0 && uuid.byte11 == 0 &&
+            uuid.byte12 == 0 && uuid.byte13 == 0 && uuid.byte14 == 0 && uuid.byte15 == 0);
+}
+
+- (enum SessionMode)mode {
+    return SESSION_VOICE;
+}
+
 -(void)dismiss {
     [[UIDevice currentDevice] setProximityMonitoringEnabled:NO];
 
@@ -215,7 +241,7 @@
 }
 
 -(void)refuseCall:(UIButton*)button {
-    [self.voip refuse];
+    [self.voip refuse:200];
     [self.player stop];
     self.player = nil;
     
@@ -279,7 +305,7 @@
 }
 
 -(void)dial {
-    
+    [self.voip dial];
 }
 
 - (void)startStream {
@@ -428,7 +454,8 @@
     }
 }
 #pragma mark - VOIPStateDelegate
--(void)onRefuse {
+-(void)onRefuse:(int)reason {
+    NSLog(@"refuse reason:%d", reason);
     [self.player stop];
     self.player = nil;
     

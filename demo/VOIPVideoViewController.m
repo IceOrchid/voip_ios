@@ -82,8 +82,8 @@
     self.voipCapture = nil;
 }
 
-- (void)dial {
-    [self.voip dialVideo];
+- (enum SessionMode)mode {
+    return SESSION_VIDEO;
 }
 
 - (void)startStream {

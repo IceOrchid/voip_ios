@@ -171,6 +171,7 @@
             controller.peerName = @"测试";
             controller.token = self.token;
             controller.isCaller = NO;
+            controller.sessionID = command.sessionID;
             
             [self presentViewController:controller animated:YES completion:nil];
         }
@@ -186,6 +187,7 @@
             controller.peerName = @"测试";
             controller.token = self.token;
             controller.isCaller = NO;
+            controller.sessionID = command.sessionID;
             
             [self presentViewController:controller animated:YES completion:nil];
         }

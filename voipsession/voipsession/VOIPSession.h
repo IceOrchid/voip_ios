@@ -24,9 +24,14 @@ enum VOIPState {
     VOIP_SHUTDOWN,//对方正在通话中，连接被终止
 };
 
+enum SessionMode {
+    SESSION_VOICE = 0,
+    SESSION_VIDEO = 1,
+};
+
 @protocol VOIPSessionDelegate <NSObject>
 @required
--(void)onRefuse;
+-(void)onRefuse:(int)reason;
 -(void)onHangUp;
 -(void)onTalking;
 
@@ -44,6 +49,9 @@ enum VOIPState {
 
 @property(nonatomic, assign) enum VOIPState state;
 
+@property(nonatomic, assign) enum SessionMode mode;
+@property(nonatomic, assign) CFUUIDBytes sessionID;
+
 @property(nonatomic, copy) NSString *voipHost;
 @property(nonatomic, copy) NSString *relayIP;
 
@@ -57,8 +65,7 @@ enum VOIPState {
 
 -(void)holePunch;
 -(void)dial;
--(void)dialVideo;
 -(void)accept;
--(void)refuse;
+-(void)refuse:(int)reason;
 -(void)hangUp;
 @end

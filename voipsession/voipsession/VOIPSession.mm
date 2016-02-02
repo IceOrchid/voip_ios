@@ -19,13 +19,10 @@
 
 static NSString *g_voipHost = VOIP_HOST;
 
-enum SessionMode {
-    SESSION_VOICE,
-    SESSION_VIDEO,
-};
+
 @interface VOIPSession()
 
-@property(nonatomic, assign) SessionMode mode;
+
 @property(nonatomic, assign) int dialCount;
 @property(nonatomic, assign) time_t dialBeginTimestamp;
 @property(nonatomic) NSTimer *dialTimer;
@@ -216,7 +213,7 @@ enum SessionMode {
     ctl.receiver = self.peerUID;
     
     VOIPCommand *command = [[VOIPCommand alloc] init];
-
+    command.sessionID = self.sessionID;
     if (self.mode == SESSION_VOICE) {
         command.cmd = VOIP_COMMAND_DIAL;
     } else if (self.mode == SESSION_VIDEO) {
@@ -299,6 +296,7 @@ enum SessionMode {
     VOIPCommand *command = [[VOIPCommand alloc] init];
     command.cmd = VOIP_COMMAND_ACCEPT;
     command.natMap = self.localNatMap;
+    command.mode = self.mode;
     [self sendCommand:command];
     
     time_t now = time(NULL);
@@ -311,8 +309,11 @@ enum SessionMode {
     }
 }
 
--(void)sendDialRefuse {
-    [self sendControlCommand:VOIP_COMMAND_REFUSE];
+-(void)sendDialRefuse:(NSTimer*)timer {
+    VOIPCommand *command = [[VOIPCommand alloc] init];
+    command.cmd = VOIP_COMMAND_REFUSE;
+    command.refuseReason = [timer.userInfo intValue];
+    [self sendCommand:command];
     
     time_t now = time(NULL);
     if (now - self.refuseTimestamp > 10) {
@@ -361,7 +362,9 @@ enum SessionMode {
             voip.state = VOIP_CONNECTED;
             [self.dialTimer invalidate];
             self.dialTimer = nil;
-
+            NSLog(@"dial mode:%d accept mode:%d", self.mode, command.mode);
+            self.mode = (SessionMode)command.mode;
+            
             //onconnected
             [self.delegate onConnected];
         } else if (command.cmd == VOIP_COMMAND_REFUSE) {
@@ -373,7 +376,7 @@ enum SessionMode {
             self.dialTimer = nil;
 
             //onrefuse
-            [self.delegate onRefuse];
+            [self.delegate onRefuse:command.refuseReason];
             
         } else if (command.cmd == VOIP_COMMAND_TALKING) {
             voip.state = VOIP_SHUTDOWN;
@@ -433,21 +436,6 @@ enum SessionMode {
 
 -(void)dial {
     self.state = VOIP_DIALING;
-    self.mode = SESSION_VOICE;
-    
-    self.dialBeginTimestamp = time(NULL);
-    [self sendDial];
-    self.dialTimer = [NSTimer scheduledTimerWithTimeInterval: 1
-                                                      target:self
-                                                    selector:@selector(sendDial)
-                                                    userInfo:nil
-                                                     repeats:YES];
-}
-
--(void)dialVideo {
-    self.state = VOIP_DIALING;
-    self.mode = SESSION_VIDEO;
-    
     self.dialBeginTimestamp = time(NULL);
     [self sendDial];
     self.dialTimer = [NSTimer scheduledTimerWithTimeInterval: 1
@@ -476,17 +464,18 @@ enum SessionMode {
 
 
 }
--(void)refuse {
+-(void)refuse:(int)reason {
     self.state = VOIP_REFUSING;
     
+
     self.refuseTimestamp = time(NULL);
     self.refuseTimer = [NSTimer scheduledTimerWithTimeInterval: 1
                                                         target:self
-                                                      selector:@selector(sendDialRefuse)
-                                                      userInfo:nil
+                                                      selector:@selector(sendDialRefuse:)
+                                                      userInfo:[NSNumber numberWithInt:reason]
                                                        repeats:YES];
     
-    [self sendDialRefuse];
+    [self sendDialRefuse:self.refuseTimer];
 
 }
 

@@ -18,6 +18,8 @@
 @property(nonatomic) int64_t peerUID;
 @property(nonatomic, copy) NSString *peerName;
 @property(nonatomic, copy) NSString *token;
+@property(nonatomic) CFUUIDBytes sessionID;
+
 //当前用户是否是主动呼叫方
 @property(nonatomic) BOOL isCaller;
 
