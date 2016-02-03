@@ -33,6 +33,8 @@ static NSString *g_voipHost = VOIP_HOST;
 @property(nonatomic, assign) time_t refuseTimestamp;
 @property(nonatomic) NSTimer *refuseTimer;
 
+@property(nonatomic) NSTimer *modeTimer;
+
 @property(atomic, assign) StunAddress4 mappedAddr;
 @property(atomic, assign) NatType natType;
 @property(nonatomic) BOOL hairpin;
@@ -213,15 +215,9 @@ static NSString *g_voipHost = VOIP_HOST;
     ctl.receiver = self.peerUID;
     
     VOIPCommand *command = [[VOIPCommand alloc] init];
+    command.cmd = VOIP_COMMAND_DIAL;
     command.sessionID = self.sessionID;
-    if (self.mode == SESSION_VOICE) {
-        command.cmd = VOIP_COMMAND_DIAL;
-    } else if (self.mode == SESSION_VIDEO) {
-        command.cmd = VOIP_COMMAND_DIAL_VIDEO;
-    } else {
-        NSAssert(NO, @"invalid session mode");
-    }
-    
+    command.mode = self.mode;
     command.dialCount = self.dialCount + 1;
     
     ctl.content = command.content;
@@ -391,6 +387,8 @@ static NSString *g_voipHost = VOIP_HOST;
             voip.state = VOIP_HANGED_UP;
             //onhangup
             [self.delegate onHangUp];
+        } else if (command.cmd == VOIP_COMMAND_DIAL) {
+            self.mode = (enum SessionMode)command.mode;
         }
     } else if (voip.state == VOIP_ACCEPTED) {
         if (command.cmd == VOIP_COMMAND_CONNECTED) {
@@ -417,11 +415,28 @@ static NSString *g_voipHost = VOIP_HOST;
     } else if (voip.state == VOIP_CONNECTED) {
         if (command.cmd == VOIP_COMMAND_HANG_UP) {
             voip.state = VOIP_HANGED_UP;
-
+            if (self.modeTimer) {
+                [self.modeTimer invalidate];
+                self.modeTimer = nil;
+            }
             //onhangup
             [self.delegate onHangUp];
         } else if (command.cmd == VOIP_COMMAND_ACCEPT) {
             [self sendConnected];
+        } else if (command.cmd == VOIP_COMMAND_MODE) {
+            if (command.mode == self.mode) {
+                if (self.modeTimer) {
+                    [self.modeTimer invalidate];
+                    self.modeTimer = nil;
+                }
+            } else {
+                self.mode = (enum SessionMode)command.mode;
+                VOIPCommand *resp = [[VOIPCommand alloc] init];
+                resp.cmd = VOIP_COMMAND_MODE;
+                resp.mode = command.mode;
+                [self sendCommand:resp];
+                [self.delegate onMode:self.mode];
+            }
         }
     } else if (voip.state == VOIP_REFUSING) {
         if (command.cmd == VOIP_COMMAND_REFUSED) {
@@ -490,10 +505,35 @@ static NSString *g_voipHost = VOIP_HOST;
     } else if (voip.state == VOIP_CONNECTED) {
         [self sendHangUp];
         voip.state = VOIP_HANGED_UP;
+        
+        if (self.modeTimer) {
+            [self.modeTimer invalidate];
+            self.modeTimer = nil;
+        }
     }else {
         NSLog(@"invalid voip state:%d", voip.state);
     }
 }
 
+-(void)setSessionMode:(enum SessionMode)mode {
+    self.mode = mode;
+    if (self.state == VOIP_CONNECTED) {
+        if (!self.modeTimer) {
+            self.modeTimer = [NSTimer scheduledTimerWithTimeInterval: 1
+                                                            target:self
+                                                          selector:@selector(sendMode)
+                                                          userInfo:nil
+                                                           repeats:YES];
+        }
+        [self sendMode];
+    }
+}
+
+-(void)sendMode {
+    VOIPCommand *command = [[VOIPCommand alloc] init];
+    command.cmd = VOIP_COMMAND_MODE;
+    command.mode = self.mode;
+    [self sendCommand:command];
+}
 
 @end

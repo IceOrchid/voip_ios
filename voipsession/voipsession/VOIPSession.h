@@ -25,8 +25,8 @@ enum VOIPState {
 };
 
 enum SessionMode {
-    SESSION_VOICE = 0,
-    SESSION_VIDEO = 1,
+    SESSION_VOICE = 1,
+    SESSION_VIDEO = 2,
 };
 
 @protocol VOIPSessionDelegate <NSObject>
@@ -39,6 +39,7 @@ enum SessionMode {
 -(void)onAcceptTimeout;
 -(void)onConnected;
 -(void)onRefuseFinished;
+-(void)onMode:(enum SessionMode)mode;
 @end
 
 @interface VOIPSession : NSObject<VOIPObserver>
@@ -68,4 +69,5 @@ enum SessionMode {
 -(void)accept;
 -(void)refuse:(int)reason;
 -(void)hangUp;
+-(void)setSessionMode:(enum SessionMode)mode;
 @end

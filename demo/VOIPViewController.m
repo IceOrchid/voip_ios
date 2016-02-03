@@ -523,4 +523,7 @@
     [self dismiss];
 }
 
+-(void)onMode:(enum SessionMode)mode {
+    NSLog(@"session mode:%d", mode);
+}
 @end

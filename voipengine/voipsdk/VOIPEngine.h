@@ -29,6 +29,8 @@
 @property(nonatomic)VOIPRenderView *localRender;
 @property(nonatomic)VOIPRenderView *remoteRender;
 
+-(BOOL)startCapture;
+-(void)stopCapture;
 -(void)switchCamera;
 -(void)startStream;
 -(void)stopStream;

@@ -23,8 +23,10 @@ STATIC_ASSERT(sizeof(CFUUIDBytes)==16,UUIDSizeIs16Byte);
         const char *p = [content bytes];
         self.cmd = readInt32(p);
         p += 4;
-        if (self.cmd == VOIP_COMMAND_DIAL || self.cmd == VOIP_COMMAND_DIAL_VIDEO) {
+        if (self.cmd == VOIP_COMMAND_DIAL) {
             self.dialCount = readInt32(p);
+            p += 4;
+            self.mode = readInt32(p);
             p += 4;
             CFUUIDBytes uuid;
             memcpy(&uuid, p, 16);
@@ -53,6 +55,9 @@ STATIC_ASSERT(sizeof(CFUUIDBytes)==16,UUIDSizeIs16Byte);
         } else if (self.cmd == VOIP_COMMAND_REFUSE) {
             self.refuseReason = readInt32(p);
             p += 4;
+        } else if (self.cmd == VOIP_COMMAND_MODE) {
+            self.mode = readInt32(p);
+            p += 4;
         }
     }
     return self;
@@ -64,13 +69,15 @@ STATIC_ASSERT(sizeof(CFUUIDBytes)==16,UUIDSizeIs16Byte);
     
     writeInt32(self.cmd, p);
     p += 4;
-    if (self.cmd == VOIP_COMMAND_DIAL || self.cmd == VOIP_COMMAND_DIAL_VIDEO) {
+    if (self.cmd == VOIP_COMMAND_DIAL) {
         writeInt32(self.dialCount, p);
+        p += 4;
+        writeInt32(self.mode, p);
         p += 4;
         CFUUIDBytes uuid = self.sessionID;
         memcpy(p, &uuid, 16);
         p += 16;
-        return [NSData dataWithBytes:buf length:24];
+        return [NSData dataWithBytes:buf length:28];
     } else if (self.cmd == VOIP_COMMAND_ACCEPT) {
         NSLog(@"nat map ip:%x", self.natMap.ip);
         writeInt32(self.natMap.ip, p);
@@ -91,6 +98,10 @@ STATIC_ASSERT(sizeof(CFUUIDBytes)==16,UUIDSizeIs16Byte);
         return [NSData dataWithBytes:buf length:14];
     } else if (self.cmd == VOIP_COMMAND_REFUSE) {
         writeInt32(self.refuseReason, p);
+        p += 4;
+        return [NSData dataWithBytes:buf length:8];
+    } else if (self.cmd == VOIP_COMMAND_MODE) {
+        writeInt32(self.mode, p);
         p += 4;
         return [NSData dataWithBytes:buf length:8];
     } else {

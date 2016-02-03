@@ -159,7 +159,7 @@
 
 -(void)onVOIPControl:(VOIPControl*)ctl {
     VOIPCommand *command = [[VOIPCommand alloc] initWithContent:ctl.content];
-    if (command.cmd == VOIP_COMMAND_DIAL) {
+    if (command.cmd == VOIP_COMMAND_DIAL && command.mode == SESSION_VOICE) {
         if (ctl.sender == self.peerUID) {
             
             [self.hud hide:NO];
@@ -175,7 +175,7 @@
             
             [self presentViewController:controller animated:YES completion:nil];
         }
-    } else if (command.cmd == VOIP_COMMAND_DIAL_VIDEO) {
+    } else if (command.cmd == VOIP_COMMAND_DIAL && command.mode == SESSION_VIDEO) {
         if (ctl.sender == self.peerUID) {
             
             [self.hud hide:NO];

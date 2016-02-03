@@ -578,6 +578,10 @@ private:
     }
 }
 
+- (BOOL)startCapture {
+    return [self startCapture:self.frontCamera];
+}
+
 - (BOOL)startCapture:(BOOL)front {
     if (self.capture != nil) {
         NSLog(@"can't start capture, module is't null");

@@ -21,22 +21,39 @@
 @property(nonatomic) VOIPRenderView *remoteRender;
 @property(nonatomic) VOIPRenderView *localRender;
 @property(nonatomic) VOIPCapture *voipCapture;
+@property(nonatomic) enum SessionMode sessionMode;
 @end
 
 @implementation VOIPVideoViewController
+
+-(id)initWithNibName:(NSString *)nibNameOrNil bundle:(NSBundle *)nibBundleOrNil {
+    self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil];
+    if (self) {
+        self.sessionMode = SESSION_VIDEO;
+    }
+    return self;
+}
 
 - (void)viewDidLoad {
     [super viewDidLoad];
     // Do any additional setup after loading the view.
     
     
-    UIButton *switchButton = [[UIButton alloc] initWithFrame:CGRectMake(240, 50, 80, 40)];
+    UIButton *switchButton = [[UIButton alloc] initWithFrame:CGRectMake(240, 50, 100, 40)];
 
     [switchButton setTitle:@"切换" forState:UIControlStateNormal];
     [switchButton addTarget:self
                           action:@selector(switchCamera:)
                 forControlEvents:UIControlEventTouchUpInside];
     [self.view addSubview:switchButton];
+    
+    UIButton *modeButton = [[UIButton alloc] initWithFrame:CGRectMake(240, 100, 100, 40)];
+    
+    [modeButton setTitle:@"摄像头开关" forState:UIControlStateNormal];
+    [modeButton addTarget:self
+                     action:@selector(switchMode:)
+           forControlEvents:UIControlEventTouchUpInside];
+    [self.view addSubview:modeButton];
     
     
     self.remoteRender = [[VOIPRenderView alloc] initWithFrame:self.view.bounds];
@@ -67,6 +84,24 @@
     [self.engine switchCamera];
 }
 
+-(void)switchMode:(id)sender {
+    NSLog(@"switch mode");
+    if (self.sessionMode == SESSION_VIDEO) {
+        [self.engine stopCapture];
+    } else if (self.sessionMode == SESSION_VOICE) {
+        [self.engine startCapture];
+    }
+    
+    
+    if (self.sessionMode == SESSION_VIDEO) {
+        self.sessionMode = SESSION_VOICE;
+    } else {
+        self.sessionMode = SESSION_VIDEO;
+    }
+    
+    [self.voip setSessionMode:self.mode];
+}
+
 /*
 #pragma mark - Navigation
 
@@ -83,7 +118,7 @@
 }
 
 - (enum SessionMode)mode {
-    return SESSION_VIDEO;
+    return self.sessionMode;
 }
 
 - (void)startStream {
@@ -154,5 +189,17 @@
     [[UIApplication sharedApplication] setIdleTimerDisabled:NO];
 }
 
+-(void)onMode:(enum SessionMode)mode {
+    NSLog(@"session mode:%d", mode);
+    
+    if (mode != self.sessionMode) {
+        self.sessionMode = mode;
+        if (self.sessionMode == SESSION_VIDEO) {
+            [self.engine startCapture];
+        } else if (self.sessionMode == SESSION_VOICE) {
+            [self.engine stopCapture];
+        }
+    }
+}
 
 @end

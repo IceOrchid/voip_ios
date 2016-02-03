@@ -10,18 +10,18 @@
 enum EVOIPCommand {
     //语音通话
     VOIP_COMMAND_DIAL = 1,
-    VOIP_COMMAND_ACCEPT,
-    VOIP_COMMAND_CONNECTED,
-    VOIP_COMMAND_REFUSE,
-    VOIP_COMMAND_REFUSED,
-    VOIP_COMMAND_HANG_UP,
-    VOIP_COMMAND_RESET,
+    VOIP_COMMAND_ACCEPT = 2,
+    VOIP_COMMAND_CONNECTED = 3,
+    VOIP_COMMAND_REFUSE = 4,
+    VOIP_COMMAND_REFUSED = 5,
+    VOIP_COMMAND_HANG_UP = 6,
+    VOIP_COMMAND_RESET = 7,
     
     //通话中
-    VOIP_COMMAND_TALKING,
+    VOIP_COMMAND_TALKING = 8,
+
     
-    //视频通话
-    VOIP_COMMAND_DIAL_VIDEO,
+    VOIP_COMMAND_MODE = 10
 };
 
 @interface NatPortMap : NSObject
@@ -35,10 +35,10 @@ enum EVOIPCommand {
 @property(nonatomic, readonly) NSData *content;
 
 @property(nonatomic, assign) int32_t cmd;
-@property(nonatomic, assign) int32_t dialCount;//只对VOIP_COMMAND_DIAL, VOIP_COMMAND_DIAL_VIDEO
-@property(nonatomic, assign) CFUUIDBytes sessionID;//只对VOIP_COMMAND_DIAL, VOIP_COMMAND_DIAL_VIDEO
+@property(nonatomic, assign) int32_t dialCount;//VOIP_COMMAND_DIAL,
+@property(nonatomic, assign) CFUUIDBytes sessionID;//VOIP_COMMAND_DIAL,
 
-@property(nonatomic, assign) int32_t mode;//VOIP_COMMAND_ACCEPT
+@property(nonatomic, assign) int32_t mode;//VOIP_COMMAND_DIAL, VOIP_COMMAND_ACCEPT
 
 @property(nonatomic) NatPortMap *natMap;//VOIP_COMMAND_ACCEPT，VOIP_COMMAND_CONNECTED
 @property(nonatomic) int32_t relayIP;//VOIP_COMMAND_CONNECTED, 中转服务器ip地址
