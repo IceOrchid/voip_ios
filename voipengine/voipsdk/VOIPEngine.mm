@@ -84,8 +84,6 @@ class AVEngine;
     pthread_cond_t cond_;
 }
 @property(nonatomic) NSDate *beginDate;
-@property(nonatomic) BOOL isPeerConnected;
-
 @property(nonatomic) VOIPCapture *capture;
 
 @property(strong, nonatomic) AudioSendStream *audioSendStream;

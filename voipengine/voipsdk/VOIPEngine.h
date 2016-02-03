@@ -29,6 +29,9 @@
 @property(nonatomic)VOIPRenderView *localRender;
 @property(nonatomic)VOIPRenderView *remoteRender;
 
+//是否使用p2p传输
+@property(nonatomic) BOOL isPeerConnected;
+
 -(BOOL)startCapture;
 -(void)stopCapture;
 -(void)switchCamera;
